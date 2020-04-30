@@ -35,18 +35,19 @@ class StoryList {
 
     // build an instance of our own class using the new array of stories
     const storyList = new StoryList(stories);
+    console.log("storyList:", storyList);
     return storyList;
   }
 
   /**
    * Method to make a POST request to /stories and add the new story to the list
-   * - user - the current instance of User who will post the story (!!not sure how to retrieve the currentUser)
+   * - user - the current instance of User who will post the story
    * - newStory - a new story object for the API with title, author, and url
    *
    * Returns the new story object
    */
 
-  static async addStory(user, newStory) {
+  async addStory(user, newStory) {
     const response = await axios.post(`${BASE_URL}/stories`, {
       token: user,
       story: newStory,
@@ -67,7 +68,6 @@ class User {
     this.name = userObj.name;
     this.createdAt = userObj.createdAt;
     this.updatedAt = userObj.updatedAt;
-
     // these are all set to defaults, not passed in by the constructor
     this.loginToken = "";
     this.favorites = [];

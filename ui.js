@@ -66,21 +66,23 @@ $(async function () {
     newStory.author = $("#author").val();
     newStory.url = $("#url").val();
     let token = localStorage.getItem("token");
-    
-    const storyRes = await StoryList.addStory(token, newStory);
+
+    const storyRes = await storyList.addStory(token, newStory);
     console.log("from ui.js", storyRes);
-    
-    
-    // once posted it appears appended, 
-    // submit form hides. 
+
+    // once posted it appears appended,
+
+    // let storyHtml = generateStoryHTML(story);
+    // $allStoriesList.append(storyHtml);
+
+    await generateStories(); // this seems better than appending the new res..
+
+    // submit form hides.
+    $submitForm.slideToggle();
     // clear form values.
-
-    // not sure why local user isn't stored 
-
-    // const newUser = await User.create(username, password, name);
-    // currentUser = newUser;
-    // syncCurrentUserToLocalStorage();
-    // loginAndSubmitForm();
+    $("#title").val("");
+    $("#author").val("");
+    $("#url").val("");
   });
 
   /**
@@ -192,6 +194,10 @@ $(async function () {
     // render story markup
     const storyMarkup = $(`
       <li id="${story.storyId}">
+      <span class="star"> 
+      <i class = "fa-star far"> </i>
+      </span>
+
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
@@ -244,7 +250,7 @@ $(async function () {
   function syncCurrentUserToLocalStorage() {
     if (currentUser) {
       localStorage.setItem("token", currentUser.loginToken);
-      localStorage.setItem("use rname", currentUser.username);
+      localStorage.setItem("username", currentUser.username);
     }
   }
 });
