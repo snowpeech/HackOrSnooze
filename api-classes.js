@@ -19,13 +19,6 @@ class StoryList {
    *  - returns the StoryList instance.*
    */
 
-  // TODO: Note the presence of `static` keyword: this indicates that getStories
-  // is **not** an instance method. Rather, it is a method that is called on the
-  // class directly. Why doesn't it make sense for getStories to be an instance method?
-
-  // > a static method is like Math.random - where random would be the static method. It
-  // > helps keep the methods together, but isn't specific to an instance. Like creating stories
-
   static async getStories() {
     // query the /stories endpoint (no auth required)
     const response = await axios.get(`${BASE_URL}/stories`);
@@ -35,7 +28,7 @@ class StoryList {
 
     // build an instance of our own class using the new array of stories
     const storyList = new StoryList(stories);
-    console.log("storyList:", storyList);
+
     return storyList;
   }
 
@@ -48,12 +41,18 @@ class StoryList {
    */
 
   async addStory(user, newStory) {
+    let token = user.loginToken;
     const response = await axios.post(`${BASE_URL}/stories`, {
-      token: user,
+      token: token,
       story: newStory,
     });
 
-    return response.data.story;
+    const addedStory = response.data.story;
+    //add to storyList
+    this.stories.push(addedStory);
+    user.ownStories.push(addedStory);
+
+    return addedStory;
   }
 }
 
@@ -75,14 +74,11 @@ class User {
   }
 
   /* Create and return a new user.
-   *
    * Makes POST request to API and returns newly-created user.
-   *
    * - username: a new username
    * - password: a new password
    * - name: the user's full name
    */
-
   static async create(username, password, name) {
     const response = await axios.post(`${BASE_URL}/signup`, {
       user: {
@@ -163,6 +159,32 @@ class User {
       (s) => new Story(s)
     );
     return existingUser;
+  }
+
+  async addFavorite(storyId) {
+    let username = this.username;
+    let token = this.loginToken;
+
+    console.log(token);
+
+    let response = await axios.post(
+      `${BASE_URL}/users/${username}/favorites/${storyId}`,
+      { token: token }
+    );
+    this.favorites = response.data.user.favorites;
+  }
+
+  async removeFavorite(storyId) {
+    let username = this.username;
+    let token = this.loginToken;
+
+    console.log(token);
+
+    let response = await axios.delete(
+      `${BASE_URL}/users/${username}/favorites/${storyId}`,
+      { token: token }
+    );
+    this.favorites = response.data.user.favorites;
   }
 }
 

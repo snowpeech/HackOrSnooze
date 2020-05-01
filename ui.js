@@ -10,6 +10,7 @@ $(async function () {
   const $navLogOut = $("#nav-logout");
   const $navLinks = $(".nav-links");
   const $navSubmit = $("#nav-submit");
+  // const $navProfile = $("#nav-user-profile");
 
   // global storyList variable
   let storyList = null;
@@ -35,6 +36,7 @@ $(async function () {
     const userInstance = await User.login(username, password);
     // set the global user to the user instance
     currentUser = userInstance;
+    console.log("curuser ui", currentUser);
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
   });
@@ -65,17 +67,15 @@ $(async function () {
     newStory.title = $("#title").val();
     newStory.author = $("#author").val();
     newStory.url = $("#url").val();
-    let token = localStorage.getItem("token");
 
-    const storyRes = await storyList.addStory(token, newStory);
-    console.log("from ui.js", storyRes);
+    const storyRes = await storyList.addStory(currentUser, newStory);
 
     // once posted it appears appended,
 
+    await generateStories(); // this seems better than appending the new res..
+    // other option to add HTML:
     // let storyHtml = generateStoryHTML(story);
     // $allStoriesList.append(storyHtml);
-
-    await generateStories(); // this seems better than appending the new res..
 
     // submit form hides.
     $submitForm.slideToggle();
@@ -121,6 +121,20 @@ $(async function () {
     hideElements();
     await generateStories();
     $allStoriesList.show();
+  });
+
+  // favorites event listener on all-articles
+  $("#all-articles-list").on("click", "i", async function (e) {
+    const i = $(this).parent().parent().index();
+    const { storyId } = storyList.stories[i];
+
+    if ($(this).hasClass("far")) {
+      await currentUser.addFavorite(storyId);
+    } else {
+      await currentUser.removeFavorite(storyId);
+    }
+    console.log(currentUser.favorites);
+    $(this).toggleClass("far fas");
   });
 
   /**
@@ -228,6 +242,16 @@ $(async function () {
     $navLogin.hide();
     $navLogOut.show();
     $navLinks.show();
+  }
+
+  //fill this in when you click on username
+  function fillUserProfile() {
+    console.log("cur", currentUser);
+    $("#profile-name").append(`<span> ${currentUser.name}</span>`);
+    $("#profile-username").append(`<span> ${currentUser.username}</span>`);
+    $("#profile-account-date").append(
+      `<span> ${currentUser.createdAt.slice(0, 10)}</span>`
+    );
   }
 
   /* simple function to pull the hostname from a URL */
