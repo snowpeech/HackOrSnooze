@@ -10,25 +10,22 @@ $(async function () {
   const $navLogOut = $("#nav-logout");
   const $navLinks = $(".nav-links");
   const $navSubmit = $("#nav-submit");
+  const $favoritedArticles = $("#favorited-articles");
+  const $myArticles = $("#my-articles");
   // const $navProfile = $("#nav-user-profile");
 
-  // global storyList variable
+  // global  variables
   let storyList = null;
-
-  // global currentUser variable
   let currentUser = null;
 
   await checkIfLoggedIn();
 
-  /**
-   * Event listener for logging in.
-   *  If successfully we will setup the user instance
-   */
+  // <-----------Event Handlers Start------------->
 
+  // listener for logging in. Will setup the user instance
   $loginForm.on("submit", async function (evt) {
-    evt.preventDefault(); // no page-refresh on submit
+    evt.preventDefault();
 
-    // grab the username and password
     const username = $("#login-username").val();
     const password = $("#login-password").val();
 
@@ -36,24 +33,17 @@ $(async function () {
     const userInstance = await User.login(username, password);
     // set the global user to the user instance
     currentUser = userInstance;
-    console.log("curuser ui", currentUser);
     syncCurrentUserToLocalStorage();
     loginAndSubmitForm();
   });
 
-  /**
-   * Event listener for signing up.
-   *  If successful we will setup a new user instance
-   */
-
+  // listener for signing up. Will setup the user instance
   $createAccountForm.on("submit", async function (evt) {
-    evt.preventDefault(); // no page refresh
+    evt.preventDefault();
 
-    // grab the required fields
     let name = $("#create-account-name").val();
     let username = $("#create-account-username").val();
     let password = $("#create-account-password").val();
-
     // call the create method, which calls the API and then builds a new user instance
     const newUser = await User.create(username, password, name);
     currentUser = newUser;
@@ -61,34 +51,26 @@ $(async function () {
     loginAndSubmitForm();
   });
 
+  // listener for submitting new story
   $submitForm.on("submit", async function (evt) {
-    evt.preventDefault(); // no page refresh
+    evt.preventDefault();
     let newStory = {};
     newStory.title = $("#title").val();
     newStory.author = $("#author").val();
     newStory.url = $("#url").val();
 
     const storyRes = await storyList.addStory(currentUser, newStory);
+    // once posted it appears appended
 
-    // once posted it appears appended,
-
-    await generateStories(); // this seems better than appending the new res..
-    // other option to add HTML:
-    // let storyHtml = generateStoryHTML(story);
-    // $allStoriesList.append(storyHtml);
+    await generateStories(); // this seems better than appending the new response
 
     // submit form hides.
     $submitForm.slideToggle();
     // clear form values.
-    $("#title").val("");
-    $("#author").val("");
-    $("#url").val("");
+    $submitForm.trigger("reset");
   });
 
-  /**
-   * Log Out Functionality
-   */
-
+  // listener for logging out
   $navLogOut.on("click", function () {
     // empty out local storage
     localStorage.clear();
@@ -96,9 +78,7 @@ $(async function () {
     location.reload();
   });
 
-  /**
-   * Event Handler for Clicking Login
-   */
+  // listener for clicking Log in (UI)
   $navLogin.on("click", function () {
     // Show the Login and Create Account Forms
     $loginForm.slideToggle();
@@ -106,50 +86,64 @@ $(async function () {
     $allStoriesList.toggle();
   });
 
-  /**
-   * Event Handler for Clicking Submit navbtn
-   */
+  // listener for clicking Submit in nav (UI)
   $navSubmit.on("click", function () {
     $submitForm.slideToggle();
   });
 
-  /**
-   * Event handler for Navigation to Homepage
-   */
-
+  // listener for clicking to homepage in nav (UI)
   $("body").on("click", "#nav-all", async function () {
     hideElements();
     await generateStories();
     $allStoriesList.show();
   });
 
-  // favorites event listener on all-articles
-  $("#all-articles-list").on("click", "i", async function (e) {
+  // listener for clicking on Favorites in nav (UI)
+  $("#nav-favorites").on("click", async function () {
+    hideElements();
+    for (let story of currentUser.favorites) {
+      const list = generateStoryHTML(story);
+      $favoritedArticles.append(list);
+    }
+    //change stars to fas
+    $("#favorited-articles i").toggleClass("far fas");
+
+    // console.log("o:", currentUser.ownStories);
+    // console.log("fav:", currentUser.favorites);
+
+    $favoritedArticles.show();
+  });
+
+  // listener for favoriting an article
+  //!! maybe should increase scope of the listener and change selector to fa-star
+  $("#all-articles-list").on("click", ".fa-star", async function (e) {
     const i = $(this).parent().parent().index();
     const { storyId } = storyList.stories[i];
-
+    console.log($(this));
+    
     if ($(this).hasClass("far")) {
       await currentUser.addFavorite(storyId);
+      console.log("fav added");
     } else {
       await currentUser.removeFavorite(storyId);
+      console.log("fav removed");
     }
     console.log(currentUser.favorites);
     $(this).toggleClass("far fas");
   });
 
-  /**
-   * On page load, checks local storage to see if the user is already logged in.
-   * Renders page information accordingly.
-   */
+  // <-----------Event Handlers End------------->
 
+  /**
+   * On page load, checks local storage to see if the user is already logged in. Renders page information accordingly.
+   */
   async function checkIfLoggedIn() {
     // let's see if we're logged in
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
 
     // if there is a token in localStorage, call User.getLoggedInUser
-    //  to get an instance of User with the right details
-    //  this is designed to run once, on page load
+    //  designed to run once, on page load
     currentUser = await User.getLoggedInUser(token, username);
     await generateStories();
 
@@ -157,11 +151,9 @@ $(async function () {
       showNavForLoggedInUser();
     }
   }
-
   /**
    * A rendering function to run to reset the forms and hide the login info
    */
-
   function loginAndSubmitForm() {
     // hide the forms for logging in and signing up
     $loginForm.hide();
@@ -179,8 +171,7 @@ $(async function () {
   }
 
   /**
-   * A rendering function to call the StoryList.getStories static method,
-   *  which will generate a storyListInstance. Then render it.
+   * A rendering function to call the StoryList.getStories static method, which  generates a storyListInstance. Then render it.
    */
 
   async function generateStories() {
@@ -198,9 +189,7 @@ $(async function () {
     }
   }
 
-  /**
-   * A function to render HTML for an individual Story instance
-   */
+  //  * A function to render HTML for an individual Story instance
 
   function generateStoryHTML(story) {
     let hostName = getHostName(story.url);
@@ -208,10 +197,9 @@ $(async function () {
     // render story markup
     const storyMarkup = $(`
       <li id="${story.storyId}">
-      <span class="star"> 
-      <i class = "fa-star far"> </i>
-      </span>
-
+        <span class="star"> 
+          <i class = "fa-star far"> </i>
+        </span>
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
@@ -242,6 +230,8 @@ $(async function () {
     $navLogin.hide();
     $navLogOut.show();
     $navLinks.show();
+    $("#nav-welcome").show();
+    $("#nav-user-profile").text(`${currentUser.username}`);
   }
 
   //fill this in when you click on username
@@ -255,7 +245,6 @@ $(async function () {
   }
 
   /* simple function to pull the hostname from a URL */
-
   function getHostName(url) {
     let hostName;
     if (url.indexOf("://") > -1) {
@@ -270,7 +259,6 @@ $(async function () {
   }
 
   /* sync current user information to localStorage */
-
   function syncCurrentUserToLocalStorage() {
     if (currentUser) {
       localStorage.setItem("token", currentUser.loginToken);
