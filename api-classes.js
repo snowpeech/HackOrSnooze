@@ -97,11 +97,7 @@ class User {
     return newUser;
   }
 
-  /* Login in user and return user instance.
-
-   * - username: an existing user's username
-   * - password: an existing user's password
-   */
+  // Login in user and return user instance.
 
   static async login(username, password) {
     const response = await axios.post(`${BASE_URL}/login`, {
@@ -181,7 +177,19 @@ class User {
       { data: { token } }
     );
     this.favorites = response.data.user.favorites;
-    console.log("api fav removed");
+  }
+
+  async deleteMyStory(storyId) {
+    let token = this.loginToken;
+
+    await axios.delete(`${BASE_URL}/stories/${storyId}`, { data: { token } });
+
+    this.favorites = this.favorites.filter(
+      (story) => story.storyId !== storyId
+    );
+    this.ownStories = this.ownStories.filter(
+      (story) => story.storyId !== storyId
+    );
   }
 }
 

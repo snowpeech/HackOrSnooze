@@ -115,24 +115,15 @@ $(async function () {
   // listener for clicking on My Stories in nav (UI)
   $("#nav-my-stories").on("click", async function () {
     hideElements();
-    //favorite stories isn't hiding :(
     $myArticles.empty();
-    console.log(currentUser);
-    console.log(currentUser.ownStories);
     for (let story of currentUser.ownStories) {
       const list = generateStoryHTML(story);
       $myArticles.append(list);
     }
 
-    //!!change favorited stars to fas
-    // get array of favorited.StoryIds?
     let favStoryIdArr = currentUser.favorites.map((story) => story.storyId);
-    console.log("FavArr:", favStoryIdArr);
-    //get array of ownStories.
     let myStoryIdArr = currentUser.ownStories.map((story) => story.storyId);
-    //return duplicates in an array. add to those storyIds
     let stars = returnCommonNums(favStoryIdArr, myStoryIdArr);
-    console.log(stars);
 
     fillStars(stars, "my-articles");
 
@@ -151,17 +142,29 @@ $(async function () {
   });
 
   // listener for favoriting an article
-  //!! need to make sure it only works for loggedIn user
+  //!! test to make sure it only works for loggedIn user
   $(".articles-container").on("click", ".fa-star", async function (e) {
+    if (currentUser) {
+      const i = $(this).parent().parent().index();
+      const { storyId } = storyList.stories[i];
+
+      if ($(this).hasClass("far")) {
+        await currentUser.addFavorite(storyId);
+      } else {
+        await currentUser.removeFavorite(storyId);
+      }
+      $(this).toggleClass("far fas");
+    }
+  });
+
+  // listener for deleting an article
+  $ownStories.on("click", ".trash-can", async function (e) {
     const i = $(this).parent().parent().index();
     const { storyId } = storyList.stories[i];
 
-    if ($(this).hasClass("far")) {
-      await currentUser.addFavorite(storyId);
-    } else {
-      await currentUser.removeFavorite(storyId);
-    }
-    $(this).toggleClass("far fas");
+    await currentUser.deleteMyStory(storyId);
+
+    $(this).parent().remove();
   });
 
   // <-----------Event Listeners End------------->
@@ -279,7 +282,6 @@ $(async function () {
 
   //fill this in when you click on username
   function fillUserProfile() {
-    console.log("cur", currentUser);
     $("#profile-name").append(`<span> ${currentUser.name}</span>`);
     $("#profile-username").append(`<span> ${currentUser.username}</span>`);
     $("#profile-account-date").append(
