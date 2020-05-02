@@ -165,8 +165,6 @@ class User {
     let username = this.username;
     let token = this.loginToken;
 
-    console.log(token);
-
     let response = await axios.post(
       `${BASE_URL}/users/${username}/favorites/${storyId}`,
       { token: token }
@@ -178,13 +176,12 @@ class User {
     let username = this.username;
     let token = this.loginToken;
 
-    console.log(token);
-
     let response = await axios.delete(
       `${BASE_URL}/users/${username}/favorites/${storyId}`,
-      { token: token }
+      { data: { token } }
     );
     this.favorites = response.data.user.favorites;
+    console.log("api fav removed");
   }
 }
 

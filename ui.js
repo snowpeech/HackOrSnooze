@@ -12,7 +12,7 @@ $(async function () {
   const $navSubmit = $("#nav-submit");
   const $favoritedArticles = $("#favorited-articles");
   const $myArticles = $("#my-articles");
-  // const $navProfile = $("#nav-user-profile");
+  const $navProfile = $("#nav-user-profile");
 
   // global  variables
   let storyList = null;
@@ -59,10 +59,9 @@ $(async function () {
     newStory.author = $("#author").val();
     newStory.url = $("#url").val();
 
-    const storyRes = await storyList.addStory(currentUser, newStory);
-    // once posted it appears appended
+    await storyList.addStory(currentUser, newStory);
 
-    await generateStories(); // this seems better than appending the new response
+    await generateStories();
 
     // submit form hides.
     $submitForm.slideToggle();
@@ -95,12 +94,14 @@ $(async function () {
   $("body").on("click", "#nav-all", async function () {
     hideElements();
     await generateStories();
+
     $allStoriesList.show();
   });
 
   // listener for clicking on Favorites in nav (UI)
   $("#nav-favorites").on("click", async function () {
     hideElements();
+    $favoritedArticles.empty();
     for (let story of currentUser.favorites) {
       const list = generateStoryHTML(story);
       $favoritedArticles.append(list);
@@ -108,31 +109,62 @@ $(async function () {
     //change stars to fas
     $("#favorited-articles i").toggleClass("far fas");
 
-    // console.log("o:", currentUser.ownStories);
-    // console.log("fav:", currentUser.favorites);
-
     $favoritedArticles.show();
   });
 
+  // listener for clicking on My Stories in nav (UI)
+  $("#nav-my-stories").on("click", async function () {
+    hideElements();
+    //favorite stories isn't hiding :(
+    $myArticles.empty();
+    console.log(currentUser);
+    console.log(currentUser.ownStories);
+    for (let story of currentUser.ownStories) {
+      const list = generateStoryHTML(story);
+      $myArticles.append(list);
+    }
+
+    //!!change favorited stars to fas
+    // get array of favorited.StoryIds?
+    let favStoryIdArr = currentUser.favorites.map((story) => story.storyId);
+    console.log("FavArr:", favStoryIdArr);
+    //get array of ownStories.
+    let myStoryIdArr = currentUser.ownStories.map((story) => story.storyId);
+    //return duplicates in an array. add to those storyIds
+    let stars = returnCommonNums(favStoryIdArr, myStoryIdArr);
+    console.log(stars);
+
+    fillStars(stars, "my-articles");
+
+    //prepend garbage icon
+    $("#my-articles .star").before(
+      '<span class="trash-can"><i class="fas fa-trash-alt"></i></span>'
+    );
+
+    $myArticles.show();
+  });
+
+  $navProfile.on("click", function () {
+    hideElements();
+    fillUserProfile();
+    $("#user-profile").show();
+  });
+
   // listener for favoriting an article
-  //!! maybe should increase scope of the listener and change selector to fa-star
-  $("#all-articles-list").on("click", ".fa-star", async function (e) {
+  //!! need to make sure it only works for loggedIn user
+  $(".articles-container").on("click", ".fa-star", async function (e) {
     const i = $(this).parent().parent().index();
     const { storyId } = storyList.stories[i];
-    console.log($(this));
-    
+
     if ($(this).hasClass("far")) {
       await currentUser.addFavorite(storyId);
-      console.log("fav added");
     } else {
       await currentUser.removeFavorite(storyId);
-      console.log("fav removed");
     }
-    console.log(currentUser.favorites);
     $(this).toggleClass("far fas");
   });
 
-  // <-----------Event Handlers End------------->
+  // <-----------Event Listeners End------------->
 
   /**
    * On page load, checks local storage to see if the user is already logged in. Renders page information accordingly.
@@ -187,6 +219,14 @@ $(async function () {
       const result = generateStoryHTML(story);
       $allStoriesList.append(result);
     }
+
+    if (currentUser) {
+      let favStoryIdArr = currentUser.favorites.map((story) => story.storyId);
+      let storyIdArr = storyList.stories.map((story) => story.storyId);
+      let stars = returnCommonNums(favStoryIdArr, storyIdArr);
+
+      fillStars(stars, "all-articles-list");
+    }
   }
 
   //  * A function to render HTML for an individual Story instance
@@ -219,6 +259,9 @@ $(async function () {
       $submitForm,
       $allStoriesList,
       $filteredArticles,
+      $favoritedArticles,
+      $myArticles,
+      $("#user-profile"),
       $ownStories,
       $loginForm,
       $createAccountForm,
@@ -231,7 +274,7 @@ $(async function () {
     $navLogOut.show();
     $navLinks.show();
     $("#nav-welcome").show();
-    $("#nav-user-profile").text(`${currentUser.username}`);
+    $navProfile.text(`${currentUser.username}`);
   }
 
   //fill this in when you click on username
@@ -266,3 +309,13 @@ $(async function () {
     }
   }
 });
+
+function returnCommonNums(arr1, arr2) {
+  return arr1.filter((value) => arr2.includes(value));
+}
+
+function fillStars(starArr, location) {
+  starArr.forEach((star) => {
+    $(`#${location} #${star} .fa-star`).toggleClass("far fas");
+  });
+}
