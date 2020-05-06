@@ -142,7 +142,6 @@ $(async function () {
   });
 
   // listener for favoriting an article
-  //!! test to make sure it only works for loggedIn user
   $(".articles-container").on("click", ".fa-star", async function (e) {
     if (currentUser) {
       const i = $(this).parent().parent().index();
@@ -282,11 +281,18 @@ $(async function () {
 
   //fill this in when you click on username
   function fillUserProfile() {
-    $("#profile-name").append(`<span> ${currentUser.name}</span>`);
-    $("#profile-username").append(`<span> ${currentUser.username}</span>`);
-    $("#profile-account-date").append(
-      `<span> ${currentUser.createdAt.slice(0, 10)}</span>`
-    );
+    $("#user-profile").html(`<h4>User Profile Info</h4>
+    <section>
+      <div><b>Name:</b> ${currentUser.name}</div>
+      <div><b>Username:</b> ${currentUser.username}</div>
+      <div><b>Account Created: </b>${currentUser.createdAt.slice(0, 10)}</div>
+    </section>`);
+
+    // append(`<span> ${currentUser.name}</span>`);
+    // $("#profile-username").append(`<span> ${currentUser.username}</span>`);
+    // $("#profile-account-date").append(
+    //   `<span> ${currentUser.createdAt.slice(0, 10)}</span>`
+    // );
   }
 
   /* simple function to pull the hostname from a URL */

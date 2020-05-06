@@ -80,21 +80,25 @@ class User {
    * - name: the user's full name
    */
   static async create(username, password, name) {
-    const response = await axios.post(`${BASE_URL}/signup`, {
-      user: {
-        username,
-        password,
-        name,
-      },
-    });
+    try {
+      const response = await axios.post(`${BASE_URL}/signup`, {
+        user: {
+          username,
+          password,
+          name,
+        },
+      });
 
-    // build a new User instance from the API response
-    const newUser = new User(response.data.user);
+      // build a new User instance from the API response
+      const newUser = new User(response.data.user);
 
-    // attach the token to the newUser instance for convenience
-    newUser.loginToken = response.data.token;
+      // attach the token to the newUser instance for convenience
+      newUser.loginToken = response.data.token;
 
-    return newUser;
+      return newUser;
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   // Login in user and return user instance.
